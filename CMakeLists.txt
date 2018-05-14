@@ -9,6 +9,6 @@ include_directories(libsnark)
 
 add_definitions(-DCURVE_BN128)
 
-add_executable(project src/main.cpp)
+add_executable(project src/main.cpp src/suppe/snark.h src/suppe/snark.tpp)
 
 target_link_libraries(project snark)
