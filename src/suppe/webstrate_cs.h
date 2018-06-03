@@ -22,7 +22,7 @@ namespace bp {
         std::shared_ptr<libsnark::pb_variable_array<FieldT>> witness;
         std::shared_ptr<libsnark::digest_variable<FieldT>> out;
         std::shared_ptr<libsnark::pb_variable_array<FieldT>> lc_aux;
-        std::shared_ptr<libsnark::packing_gadget<FieldT>> pg1;
+        std::shared_ptr<std::vector<libsnark::packing_gadget<FieldT>>> pg;
 
         std::shared_ptr<libsnark::sha256_compression_function_gadget<FieldT>> sha256;
 
@@ -44,7 +44,6 @@ namespace bp {
 
             lc_aux->allocate(*pb, 8, "lc_aux");
 
-            libsnark::pb_linear_combination<FieldT> packed_result1((*lc_aux)[0]);
 
             out = std::shared_ptr<libsnark::digest_variable<FieldT>>(
                     new libsnark::digest_variable<FieldT>(*pb, 256, "output"));
@@ -58,10 +57,15 @@ namespace bp {
                                                                              "sha"));
 
             libsnark::pb_variable_array<FieldT> lc_arr(out->bits);
-            int i = 0;
-            libsnark::pb_variable_array<FieldT> lc_arr1(lc_arr.rbegin() + i * 32, lc_arr.rbegin() + (i + 1) * 32);
 
-            pg1 = std::shared_ptr<libsnark::packing_gadget<FieldT>>(new libsnark::packing_gadget<FieldT>(*pb, lc_arr1, packed_result1, "packing1"));
+            pg = std::shared_ptr<std::vector<libsnark::packing_gadget<FieldT>>>(new std::vector<libsnark::packing_gadget<FieldT>>);
+
+            for (int j = 0; j < 8; ++j) {
+                libsnark::pb_linear_combination<FieldT> packedResult((*lc_aux)[j]);
+                libsnark::pb_variable_array<FieldT> lc_aux_arr(lc_arr.rbegin() + j * 32, lc_arr.rbegin() + (j + 1) * 32);
+
+                pg->push_back(libsnark::packing_gadget<FieldT>(*pb, lc_aux_arr, packedResult, "packing"));
+            }
         }
 
         void set_num_of_inputs(const size_t num_inputs) {
@@ -71,15 +75,19 @@ namespace bp {
         void generate_r1cs_constraints() {
             sha256->generate_r1cs_constraints();
 
-            pg1->generate_r1cs_constraints(1);
+            for (int j = 0; j < pg->size(); ++j) {
+                (*pg)[j].generate_r1cs_constraints(1);
 
-            pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, (*lc_aux)[0], (*primary_in)[7]),
-                                    "eq constraint");
+                pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, (*lc_aux)[j], (*primary_in)[7 - j]),
+                                        "eq constraint");
+            }
         }
 
         libsnark::r1cs_auxiliary_input<FieldT> generate_r1cs_witness(libsnark::r1cs_primary_input<FieldT> input,
                                                                      libsnark::r1cs_auxiliary_input<FieldT> auxiliary_input) {
-            pb->val((*primary_in)[0]) = input[0];
+            for (int k = 0; k < 8; ++k) {
+                pb->val((*primary_in)[k]) = input[k];
+            }
 
             for (int i = 0; i < witness->size(); ++i) {
                 pb->val((*witness)[i]) = auxiliary_input[i];
@@ -87,9 +95,15 @@ namespace bp {
 
             sha256->generate_r1cs_witness();
 
-            pg1->generate_r1cs_witness_from_bits();
 
-            printf("FiskeMaster: %lx \n", pb->val((*lc_aux)[0]).as_ulong());
+            printf("FiskeMaster[i]: h(aux)[i] = primary[i] \n");
+            for (int j = 0; j < pg->size(); ++j) {
+                (*pg)[j].generate_r1cs_witness_from_bits();
+
+                printf("FiskeMaster[%d]: %lx = %lx \n", j, pb->val((*lc_aux)[j]).as_ulong(), pb->val((*primary_in)[7 - j]).as_ulong());
+            }
+
+
 
             return pb->auxiliary_input();
         }

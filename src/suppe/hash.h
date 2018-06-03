@@ -14,7 +14,7 @@
 namespace bp {
 
     template<typename FieldT>
-    void sha(std::vector<int>& input, std::vector<int>& dest) {
+    void sha(std::vector<U32>& input, std::vector<U32>& dest) {
 
         // Convert input from vector<int>
         libff::bit_vector bv_in;
@@ -31,7 +31,7 @@ namespace bp {
 
         // Process rest of the hash in half-chunks so we can hash a vector is half previous output and half input.
         int chunk_size = libsnark::SHA256_block_size / 2;
-        for (int i = libsnark::SHA256_block_size; i < bv_in.size(); i += chunk_size / 2) {
+        for (S32 i = libsnark::SHA256_block_size; i < bv_in.size(); i += chunk_size / 2) {
             bv_tmp.clear();
             bv_tmp.insert(bv_tmp.end(), bv_out.begin(), bv_out.end());
             bv_tmp.insert(bv_tmp.end(), bv_in.begin() + i, bv_in.begin() + i + chunk_size);

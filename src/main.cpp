@@ -43,15 +43,16 @@ void test_r1cs_minimal(size_t input_size)
     r1cs_ppzksnark_keypair<ppT> keypair = fisk.generate(cs, true);
 
     //create test input
-    std::vector<int> aux_input = {'2', '1', '2', '1'};
+    std::vector<U32> aux_input = {'2', '1', '2', '1'};
 
-    std::vector<int> aux_input_hashed;
+    std::vector<U32> aux_input_hashed;
     bp::sha<FieldT>(aux_input, aux_input_hashed);
 
     libsnark::r1cs_auxiliary_input<FieldT> auxiliary_input = generate_bit_vec_input<FieldT>(aux_input, cs.auxiliary_input_size);
     libsnark::r1cs_primary_input<FieldT> primary_input = generate_input<FieldT>(aux_input_hashed, 8);
 
-    for (int j = 0; j < 8; ++j) {
+    printf("primary_input = ");
+    for (U32 j = 0; j < 8; ++j) {
         printf("%lx ", aux_input_hashed[j]);
     }
     printf("\n");
