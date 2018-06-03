@@ -13,7 +13,6 @@
 #include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.hpp>
 #include "suppe/snark.h"
 #include "suppe/webstrate_cs.h"
-#include "suppe/picosha2.h"
 #include "suppe/utils.h"
 #include "suppe/hash.h"
 

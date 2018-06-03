@@ -21,7 +21,7 @@ namespace bp {
         std::shared_ptr<libsnark::pb_variable_array<FieldT>> primary_in;
         std::shared_ptr<libsnark::pb_variable_array<FieldT>> witness;
         std::shared_ptr<libsnark::digest_variable<FieldT>> out;
-        std::shared_ptr<libsnark::pb_variable<FieldT>> lc_aux1;
+        std::shared_ptr<libsnark::pb_variable_array<FieldT>> lc_aux;
         std::shared_ptr<libsnark::packing_gadget<FieldT>> pg1;
 
         std::shared_ptr<libsnark::sha256_compression_function_gadget<FieldT>> sha256;
@@ -36,15 +36,15 @@ namespace bp {
             primary_in = std::shared_ptr<libsnark::pb_variable_array<FieldT>>(new libsnark::pb_variable_array<FieldT>);
             witness = std::shared_ptr<libsnark::pb_variable_array<FieldT>>(new libsnark::pb_variable_array<FieldT>);
 
-            lc_aux1 = std::shared_ptr<libsnark::pb_variable<FieldT>>(new libsnark::pb_variable<FieldT>);
+            lc_aux = std::shared_ptr<libsnark::pb_variable_array<FieldT>>(new libsnark::pb_variable_array<FieldT>);
 
 
             primary_in->allocate(*pb, 8, "in");
             witness->allocate(*pb, tree_size, "witness");
 
-            lc_aux1->allocate(*pb, "lc_aux1");
+            lc_aux->allocate(*pb, 8, "lc_aux");
 
-            libsnark::pb_linear_combination<FieldT> packed_result1(*lc_aux1);
+            libsnark::pb_linear_combination<FieldT> packed_result1((*lc_aux)[0]);
 
             out = std::shared_ptr<libsnark::digest_variable<FieldT>>(
                     new libsnark::digest_variable<FieldT>(*pb, 256, "output"));
@@ -73,7 +73,7 @@ namespace bp {
 
             pg1->generate_r1cs_constraints(1);
 
-            pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, *lc_aux1, (*primary_in)[7]),
+            pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, (*lc_aux)[0], (*primary_in)[7]),
                                     "eq constraint");
         }
 
@@ -89,7 +89,7 @@ namespace bp {
 
             pg1->generate_r1cs_witness_from_bits();
 
-            printf("FiskeMaster: %lx \n", pb->val(*lc_aux1).as_ulong());
+            printf("FiskeMaster: %lx \n", pb->val((*lc_aux)[0]).as_ulong());
 
             return pb->auxiliary_input();
         }
