@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <vector>
 #include <libsnark/relations/constraint_satisfaction_problems/r1cs/r1cs.hpp>
+#include <fstream>
 
 #define BIT(N, x) (((x) >> (N)) & 1)
 // Types
@@ -39,6 +40,15 @@ void transfer_vector_items(std::vector<U32>& src, libff::bit_vector& dest) {
     }
 }
 
+void read_file_to_int_vector(std::string src, std::vector<U32>& dest) {
+    std::ifstream in(src);
+    std::string contents((std::istreambuf_iterator<char>(in)),
+                         std::istreambuf_iterator<char>());
+
+    for (char j : contents) {
+        dest.push_back((U32) j);
+    }
+}
 
 template<typename FieldT>
 std::vector<FieldT> generate_bit_vec_input(std::vector<U32> vals, size_t max)

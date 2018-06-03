@@ -16,6 +16,10 @@
 #include "suppe/utils.h"
 #include "suppe/hash.h"
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 using namespace libsnark;
 
 
@@ -34,19 +38,20 @@ void test_r1cs_minimal(size_t input_size)
 
     libsnark::r1cs_constraint_system<FieldT> cs = webstrateSnark.get_constraint_system();
 
-
+    bool test_serialization = false;
 
     //zksnark part
     bp::Fisk<ppT> fisk;
 
     //generate
-    r1cs_ppzksnark_keypair<ppT> keypair = fisk.generate(cs, true);
+    r1cs_ppzksnark_keypair<ppT> keypair = fisk.generate(cs, test_serialization);
 
     //create test input
-    std::vector<U32> aux_input = {'2', '1', '2', '1'};
+    std::vector<U32> aux_input;
+    read_file_to_int_vector("input.txt", aux_input);
 
     std::vector<U32> aux_input_hashed;
-    bp::sha<FieldT>(aux_input, aux_input_hashed);
+    bp::sha<FieldT>(aux_input, aux_input_hashed, input_size);
 
     libsnark::r1cs_auxiliary_input<FieldT> auxiliary_input = generate_bit_vec_input<FieldT>(aux_input, cs.auxiliary_input_size);
     libsnark::r1cs_primary_input<FieldT> primary_input = generate_input<FieldT>(aux_input_hashed, 8);
@@ -60,7 +65,7 @@ void test_r1cs_minimal(size_t input_size)
     libsnark::r1cs_auxiliary_input<FieldT> aux_input_v2 = webstrateSnark.generate_r1cs_witness(primary_input, auxiliary_input);
 
     //prove
-    libsnark::r1cs_ppzksnark_proof<ppT> proof = fisk.prove(keypair.pk, primary_input, aux_input_v2, true);
+    libsnark::r1cs_ppzksnark_proof<ppT> proof = fisk.prove(keypair.pk, primary_input, aux_input_v2, test_serialization);
 
     //verify
     bool ans = fisk.verify(keypair.vk, primary_input, proof);
@@ -73,5 +78,5 @@ int main(int argc, const char * argv[])
     default_r1cs_ppzksnark_pp::init_public_params();
     libff::start_profiling();
 
-    test_r1cs_minimal<default_r1cs_ppzksnark_pp>(512);
+    test_r1cs_minimal<default_r1cs_ppzksnark_pp>(4096);
 }
