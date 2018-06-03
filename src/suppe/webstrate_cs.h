@@ -18,7 +18,7 @@ namespace bp {
     class WebstrateSnark {
     private:
         std::shared_ptr<libsnark::protoboard<FieldT>> pb;
-        std::shared_ptr<libsnark::pb_variable<FieldT>> primary_in;
+        std::shared_ptr<libsnark::pb_variable_array<FieldT>> primary_in;
         std::shared_ptr<libsnark::pb_variable_array<FieldT>> witness;
         std::shared_ptr<libsnark::digest_variable<FieldT>> out;
         std::shared_ptr<libsnark::pb_variable<FieldT>> lc_aux1;
@@ -33,13 +33,13 @@ namespace bp {
 
             pb = std::shared_ptr<libsnark::protoboard<FieldT>>(new libsnark::protoboard<FieldT>);
 
-            primary_in = std::shared_ptr<libsnark::pb_variable<FieldT>>(new libsnark::pb_variable<FieldT>);
+            primary_in = std::shared_ptr<libsnark::pb_variable_array<FieldT>>(new libsnark::pb_variable_array<FieldT>);
             witness = std::shared_ptr<libsnark::pb_variable_array<FieldT>>(new libsnark::pb_variable_array<FieldT>);
 
             lc_aux1 = std::shared_ptr<libsnark::pb_variable<FieldT>>(new libsnark::pb_variable<FieldT>);
 
 
-            primary_in->allocate(*pb, "in");
+            primary_in->allocate(*pb, 8, "in");
             witness->allocate(*pb, tree_size, "witness");
 
             lc_aux1->allocate(*pb, "lc_aux1");
@@ -73,13 +73,13 @@ namespace bp {
 
             pg1->generate_r1cs_constraints(1);
 
-            pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, *lc_aux1, *primary_in),
+            pb->add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(1, *lc_aux1, (*primary_in)[7]),
                                     "eq constraint");
         }
 
         libsnark::r1cs_auxiliary_input<FieldT> generate_r1cs_witness(libsnark::r1cs_primary_input<FieldT> input,
                                                                      libsnark::r1cs_auxiliary_input<FieldT> auxiliary_input) {
-            pb->val(*primary_in) = input[0];
+            pb->val((*primary_in)[0]) = input[0];
 
             for (int i = 0; i < witness->size(); ++i) {
                 pb->val((*witness)[i]) = auxiliary_input[i];
