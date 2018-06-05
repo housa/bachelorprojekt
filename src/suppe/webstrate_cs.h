@@ -115,11 +115,16 @@ namespace bp {
                 vector_of_hashing_gadgets[l].generate_r1cs_witness();
             }
 
+#ifdef DEBUG
             printf("FiskeMaster[i]: h(aux)[i] = primary[i] \n");
+#endif
+
             for (int j = 0; j < vector_of_packing_gadgets.size(); ++j) {
                 vector_of_packing_gadgets[j].generate_r1cs_witness_from_bits();
 
+#ifdef DEBUG
                 printf("FiskeMaster[%d]: %lx = %lx \n", j, pb->val((*lc_aux)[j]).as_ulong(), pb->val((*primary_in)[7 - j]).as_ulong());
+#endif
             }
 
             return pb->auxiliary_input();

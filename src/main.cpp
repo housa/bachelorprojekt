@@ -1,4 +1,4 @@
-#define DEBUG true
+//#define DEBUG true
 
 #include <cassert>
 #include <cstdio>
@@ -30,6 +30,8 @@ void test_r1cs_minimal(size_t input_size)
     typedef default_r1cs_ppzksnark_pp detype;
     typedef libff::Fr<detype> FieldT;
 
+    bool test_serialization = false;
+
     //R1CS part
     bp::WebstrateSnark<FieldT> webstrateSnark(input_size);
     webstrateSnark.generate_r1cs_constraints();
@@ -37,8 +39,6 @@ void test_r1cs_minimal(size_t input_size)
     webstrateSnark.set_num_of_inputs(8);
 
     libsnark::r1cs_constraint_system<FieldT> cs = webstrateSnark.get_constraint_system();
-
-    bool test_serialization = false;
 
     //zksnark part
     bp::Fisk<ppT> fisk;
@@ -55,12 +55,6 @@ void test_r1cs_minimal(size_t input_size)
 
     libsnark::r1cs_auxiliary_input<FieldT> auxiliary_input = generate_bit_vec_input<FieldT>(aux_input, cs.auxiliary_input_size);
     libsnark::r1cs_primary_input<FieldT> primary_input = generate_input<FieldT>(aux_input_hashed, 8);
-
-    printf("primary_input = ");
-    for (U32 j = 0; j < 8; ++j) {
-        printf("%lx ", aux_input_hashed[j]);
-    }
-    printf("\n");
 
     libsnark::r1cs_auxiliary_input<FieldT> aux_input_v2 = webstrateSnark.generate_r1cs_witness(primary_input, auxiliary_input);
 
