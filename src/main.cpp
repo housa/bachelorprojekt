@@ -20,6 +20,8 @@
 #include <fstream>
 #include <string>
 
+#include <chrono>
+
 using namespace libsnark;
 
 
@@ -31,6 +33,10 @@ void test_r1cs_minimal(size_t input_size)
     typedef libff::Fr<detype> FieldT;
 
     bool test_serialization = false;
+
+    std::chrono::nanoseconds prove_start, prove_end,
+            verify_start, verify_end,
+            gen_start, gen_end;
 
     //R1CS part
     bp::WebstrateSnark<FieldT> webstrateSnark(input_size);
@@ -44,11 +50,21 @@ void test_r1cs_minimal(size_t input_size)
     bp::Fisk<ppT> fisk;
 
     //generate
+    gen_start = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+
     r1cs_ppzksnark_keypair<ppT> keypair = fisk.generate(cs, test_serialization);
+
+    gen_end = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
 
     //create test input
     std::vector<U32> aux_input;
-    read_file_to_int_vector("input.txt", aux_input);
+    read_file_to_int_vector("input.txt", aux_input, input_size / 32);
+
+    std::cout << aux_input.size() << " : aux_input.size() \n";
 
     std::vector<U32> aux_input_hashed;
     bp::sha<FieldT>(aux_input, aux_input_hashed, input_size);
@@ -59,11 +75,37 @@ void test_r1cs_minimal(size_t input_size)
     libsnark::r1cs_auxiliary_input<FieldT> aux_input_v2 = webstrateSnark.generate_r1cs_witness(primary_input, auxiliary_input);
 
     //prove
+     prove_start = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+
     libsnark::r1cs_ppzksnark_proof<ppT> proof = fisk.prove(keypair.pk, primary_input, aux_input_v2, test_serialization);
 
+    prove_end = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+
+
     //verify
+    verify_start = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
     bool ans = fisk.verify(keypair.vk, primary_input, proof);
     assert(ans);
+
+    verify_end = std::chrono::duration_cast< std::chrono::nanoseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+
+    std::ofstream benchFile;
+    benchFile.open("benchmark.txt", std::ios_base::app);
+    benchFile << input_size << "\t" << (gen_end.count()-gen_start.count()) << "\t" << (prove_end.count()-prove_start.count()) << "\t" << (verify_end.count()-verify_start.count()) << "\n";
+    benchFile.close();
+
+
+
+
+
 
 }
 
@@ -72,5 +114,13 @@ int main(int argc, const char * argv[])
     default_r1cs_ppzksnark_pp::init_public_params();
     libff::start_profiling();
 
-    test_r1cs_minimal<default_r1cs_ppzksnark_pp>(4096);
+    U32 s = 10, e = 15;
+    U32 n = 5;
+
+    for (U32 j = s; j <= e; ++j) {
+        for (U32 k = 0; k < 5; ++k) {
+            std::cout << (1<<j);
+            test_r1cs_minimal<default_r1cs_ppzksnark_pp>(1 << j);
+        }
+    }
 }

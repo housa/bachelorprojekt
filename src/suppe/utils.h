@@ -40,12 +40,19 @@ void transfer_vector_items(std::vector<U32>& src, libff::bit_vector& dest) {
     }
 }
 
-void read_file_to_int_vector(std::string src, std::vector<U32>& dest) {
+void read_file_to_int_vector(std::string src, std::vector<U32>& dest, U32 input_size) {
     std::ifstream in(src);
     std::string contents((std::istreambuf_iterator<char>(in)),
                          std::istreambuf_iterator<char>());
 
+    U32 i = 0;
+
     for (char j : contents) {
+        if (i >= input_size) {
+            break;
+        }
+        i++;
+
         dest.push_back((U32) j);
     }
 }
